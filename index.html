@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N328 Final Project</title>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <!-- Styling of body and buttons -->
+    <style>
+        body {
+            background-color: papayawhip;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 18px;
+        }
+        button {
+            background-color: lavender;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 18px;
+            float: right;
+        }
+    </style>
+    <h2>Domestic vs International Sales for Top 100 Grossing Movies</h2>
+    <p>Hover over the points to receive additional information
+    <button onclick="sortByLicense()">Sort by license</button>
+    <button onclick="sortByDistributor()">Sort by distributor</button>
+    <button onclick="noSort()">No sort</button>
+    </p>
+    <!-- Div for the visualization-->
+    <div id="datavis"></div>
+</head>
+<body>
+<script>
+    //margins and dimensions of visualization
+    var margin = {top: 25, right: 75, bottom: 75, left: 150},
+        width = 1200 - margin.left - margin.right,
+        height = 625 - margin.top - margin.bottom;
+    
+    //adding svg object to the bdoy
+    var svg = d3.select("#datavis")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+    
+    //parse the data
+    d3.csv("https://raw.githubusercontent.com/mcastrat/N328-Final/main/HighestGrossingMovies.csv", function(data) {
+    
+    //x axis boundaries and styling
+      var x = d3.scaleLinear()
+        .domain([0, 1000000000])
+        .range([ 0, width ]);
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .style('font-family', 'Courier New')
+        .style('font-size', 12)
+        .call(d3.axisBottom(x));
+
+    //x axis label and styling
+    svg.append('text')
+        .attr('x', width/2 + 50)
+        .attr('y', height + 50)
+        .attr('text-anchor', 'middle')
+        .style('font-family', 'Courier New')
+        .style('font-size', 24)
+        .text('Domestic Sales (in USD)');
+
+    //y axis boundaries and styling
+      var y = d3.scaleLinear()
+        .domain([0, 2400000000])
+        .range([ height, 0]);
+      svg.append("g")
+        .style('font-family', 'Courier New')
+        .style('font-size', 12)
+        .call(d3.axisLeft(y));
+        
+    //y axis label and styling
+        svg.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('transform', 'translate(-125,' + height/2 + ')rotate(-90)')
+        .style('font-family', 'Courier New')
+        .style('font-size', 24)
+        .text('International Sales (in USD)');
+    
+        //tooltip div and styling
+      var tooltip = d3.select("#datavis")
+        .append("div")
+        .style("max-width", "400px")
+        .style("opacity", 0)
+        .attr("class", "tooltip")
+        .style("background-color", "lavender")
+        .style("border", "solid")
+        .style("border-width", "1px")
+        .style("border-radius", "5px")
+        .style("padding", "1px")
+        .style("position", "absolute")
+    
+      //function for when mouse hovers
+      var mouseover = function(d) {
+        tooltip
+          .style("opacity", 1)
+      }
+    
+      //display tooltip and set its position off to the side
+      var mousemove = function(d) {
+        tooltip
+          .html("<b>Title: </b>" + d.title + "<br><b>Description: </b>" + d.info + "<br><b>Distributor: </b>" + d.distributor + "<br><b>License: </b>" + d.license)
+          .style('font-family', 'Courier New')
+          .style("left", (d3.mouse(this)[0]+250) + "px")
+          .style("top", (d3.mouse(this)[1]-50) + "px")
+      }
+    
+      //change tooltip when mouse leaves
+        var mouseleave = function(d) {
+        tooltip
+          .transition()
+          .duration(50)
+          .style("opacity", 0)
+      }
+      
+      //adding points
+      svg.append('g')
+        .selectAll("dot")
+        .data(data.filter(function(d,i){return i<100})) //only displaying top 100 movies
+        .enter()
+        .append("circle")
+          .attr("cx", function (d) { return x(d.dom_sales); } ) //domestic sales as x variable
+          .attr("cy", function (d) { return y(d.int_sales); } ) //international sales as y variable
+          .attr("r", 5)
+          //.style("fill", function (d) { return color(d.distributor) } )
+          .style("stroke", "white")
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave)
+          //.style("opacity", .3)
+          //.style("stroke", "white")
+    })
+
+    //function for no color sorting of the points
+    function noSort() {
+        var color = d3.scaleOrdinal()
+        d3.selectAll("circle")
+    .style("fill", function (d) { return color("black")} )
+    }
+
+    //function to sort the points by color for each distributor
+    function sortByDistributor() {
+        var distributors = ["Walt Disney Studios Motion Pictures", 
+    "Twentieth Century Fox",
+    "Sony Pictures Entertainment (SPE)",
+    "Paramount Pictures",
+    "Universal Pictures",
+    "Warner Bros.",
+    "DreamWorks Distribution",
+    "Lionsgate",
+    "New Line Cinema",
+    "Summit Entertainment"
+    ]
+    //matching distributors to colors
+     var color = d3.scaleOrdinal()
+    .domain(["distributors"])
+    .range(["DarkBlue", "DarkCyan", "DarkGray", "DarkMagenta", "DarkOliveGreen", "DarkRed", "DarkSalmon", "DarkSeaGreen", "DarkSlateBlue", "DarkSlateGray", "DarkTurquoise"])
+        d3.selectAll("circle")
+    .transition()
+    .duration(50)
+    .style("fill", function (d) { return color(d.distributor)} )
+    }
+
+    //function to sort the points by color for each license
+    function sortByLicense() {
+        var licenses = ["G",
+        "PG", 
+        "PG-13",
+        "R",
+        "NA",
+    ]
+     //matching licenses to colors
+     var color = d3.scaleOrdinal()
+    .domain(["licenses"])
+    .range(["DarkBlue", "DarkCyan", "DarkGray", "DarkMagenta", "DarkOliveGreen"])
+        d3.selectAll("circle")
+    .transition()
+    .duration(50)
+    .style("fill", function (d) { return color(d.license)} )
+    }
+    </script>
+</body>
+</html>
